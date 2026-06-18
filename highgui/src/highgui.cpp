@@ -19,6 +19,7 @@
 #include <opencv2/imgproc.hpp>
 #include <string.h>
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include "exif.hpp"
 
@@ -131,6 +132,25 @@ static bool is_tiff(const unsigned char* buf, size_t size)
             (buf[0] == 'M' && buf[1] == 'M' && buf[2] == 0x00 && buf[3] == 0x2a) ||
             (buf[0] == 'I' && buf[1] == 'I' && buf[2] == 0x2b && buf[3] == 0x00) ||
             (buf[0] == 'M' && buf[1] == 'M' && buf[2] == 0x00 && buf[3] == 0x2b));
+}
+
+static int calcImreadType(int type, int flags)
+{
+    if ((flags & (IMREAD_COLOR | IMREAD_ANYCOLOR | IMREAD_ANYDEPTH)) == (IMREAD_COLOR | IMREAD_ANYCOLOR | IMREAD_ANYDEPTH))
+        return type;
+
+    if (flags == IMREAD_UNCHANGED)
+        return type;
+
+    if ((flags & IMREAD_ANYDEPTH) == 0)
+        type = CV_MAKETYPE(CV_8U, CV_MAT_CN(type));
+
+    if ((flags & IMREAD_COLOR) != 0 || ((flags & IMREAD_ANYCOLOR) != 0 && CV_MAT_CN(type) > 1))
+        type = CV_MAKETYPE(CV_MAT_DEPTH(type), 3);
+    else
+        type = CV_MAKETYPE(CV_MAT_DEPTH(type), 1);
+
+    return type;
 }
 #endif
 
@@ -1014,6 +1034,229 @@ bool imencode(const String& ext, InputArray _img, std::vector<uchar>& buf, const
 
     return success;
 }
+
+#ifdef HAVE_TIFF
+#if CV_VERSION_MAJOR >= 4
+bool imreadmulti(const String& filename, std::vector<Mat>& mats, int start, int count, int flags)
+{
+    mats.clear();
+
+    if (start < 0)
+        return false;
+
+    TiffDecoder decoder;
+    if (!decoder.setSource(filename) || !decoder.readHeader())
+        return false;
+
+    for (int i = 0; i < start; ++i)
+    {
+        if (!decoder.nextPage())
+            return false;
+    }
+
+    if (count < 0)
+        count = std::numeric_limits<int>::max();
+
+    for (int i = 0; i < count; ++i)
+    {
+        int type = calcImreadType(decoder.type(), flags);
+        if (decoder.width() <= 0 || decoder.height() <= 0)
+            break;
+        Mat mat(decoder.height(), decoder.width(), type);
+        if (!decoder.readData(mat))
+        {
+            mats.clear();
+            break;
+        }
+        mats.push_back(mat);
+        if (!decoder.nextPage())
+            break;
+    }
+
+    return !mats.empty();
+}
+#endif
+
+#if CV_VERSION_MAJOR >= 3
+bool imreadmulti(const String& filename, std::vector<Mat>& mats, int flags)
+{
+#if CV_VERSION_MAJOR >= 4
+    return imreadmulti(filename, mats, 0, -1, flags);
+#else
+    mats.clear();
+
+    TiffDecoder decoder;
+    if (!decoder.setSource(filename) || !decoder.readHeader())
+        return false;
+
+    while (true)
+    {
+        if (decoder.width() <= 0 || decoder.height() <= 0)
+            break;
+        int type = calcImreadType(decoder.type(), flags);
+        Mat mat(decoder.height(), decoder.width(), type);
+        if (!decoder.readData(mat))
+        {
+            mats.clear();
+            break;
+        }
+        mats.push_back(mat);
+        if (!decoder.nextPage())
+            break;
+    }
+
+    return !mats.empty();
+#endif
+}
+
+bool imwritemulti(const String& filename, InputArrayOfArrays _imgs, const std::vector<int>& params)
+{
+    const char* _ext = strrchr(filename.c_str(), '.');
+    if (!_ext)
+        return false;
+    String ext = _ext;
+    if (ext != ".tiff" && ext != ".tif" && ext != ".TIFF" && ext != ".TIF")
+        return false;
+
+    std::vector<Mat> img_vec;
+    _imgs.getMatVector(img_vec);
+
+    if (img_vec.empty())
+        return false;
+
+    for (size_t i = 0; i < img_vec.size(); ++i)
+    {
+        if (img_vec[i].empty())
+            return false;
+        int cn = img_vec[i].channels();
+        if (cn != 1 && cn != 3 && cn != 4)
+            return false;
+    }
+
+    TiffEncoder encoder;
+    if (!encoder.setDestination(filename))
+        return false;
+
+    return encoder.writemulti(img_vec, params);
+}
+#endif
+#endif
+
+#if CV_VERSION_MAJOR >= 4 && defined(HAVE_TIFF)
+bool imdecodemulti(InputArray _buf, int flags, std::vector<Mat>& mats, const cv::Range& range)
+{
+    mats.clear();
+
+    Mat buf = _buf.getMat();
+    if (buf.empty() || !buf.isContinuous())
+        return false;
+
+    TiffDecoder decoder;
+    String tmp_filename;
+    if (!decoder.setSource(buf))
+    {
+        tmp_filename = cv::tempfile(".tif");
+        FILE* f = fopen(tmp_filename.c_str(), "wb");
+        if (!f)
+            return false;
+        size_t buf_size = buf.total() * buf.elemSize();
+        if (fwrite(buf.ptr(), 1, buf_size, f) != buf_size)
+        {
+            fclose(f);
+            remove(tmp_filename.c_str());
+            return false;
+        }
+        fclose(f);
+        if (!decoder.setSource(tmp_filename))
+        {
+            remove(tmp_filename.c_str());
+            return false;
+        }
+    }
+
+    if (!decoder.readHeader())
+    {
+        if (!tmp_filename.empty())
+            remove(tmp_filename.c_str());
+        return false;
+    }
+
+    int start = 0;
+    int count = -1;
+    if (range != Range::all())
+    {
+        if (range.start < 0 || range.size() <= 0)
+        {
+            if (!tmp_filename.empty())
+                remove(tmp_filename.c_str());
+            return false;
+        }
+        start = range.start;
+        count = range.size();
+    }
+
+    for (int i = 0; i < start; ++i)
+    {
+        if (!decoder.nextPage())
+        {
+            if (!tmp_filename.empty())
+                remove(tmp_filename.c_str());
+            return false;
+        }
+    }
+
+    if (count < 0)
+        count = std::numeric_limits<int>::max();
+
+    for (int i = 0; i < count; ++i)
+    {
+        if (decoder.width() <= 0 || decoder.height() <= 0)
+            break;
+        int type = calcImreadType(decoder.type(), flags);
+        Mat mat(decoder.height(), decoder.width(), type);
+        if (!decoder.readData(mat))
+        {
+            mats.clear();
+            break;
+        }
+        mats.push_back(mat);
+        if (!decoder.nextPage())
+            break;
+    }
+
+    if (!tmp_filename.empty())
+        remove(tmp_filename.c_str());
+
+    return !mats.empty();
+}
+
+bool imencodemulti(const String& ext, InputArrayOfArrays _imgs, std::vector<uchar>& buf, const std::vector<int>& params)
+{
+    if (ext != ".tiff" && ext != ".tif" && ext != ".TIFF" && ext != ".TIF")
+        return false;
+
+    std::vector<Mat> img_vec;
+    _imgs.getMatVector(img_vec);
+
+    if (img_vec.empty())
+        return false;
+
+    for (size_t i = 0; i < img_vec.size(); ++i)
+    {
+        if (img_vec[i].empty())
+            return false;
+        int cn = img_vec[i].channels();
+        if (cn != 1 && cn != 3 && cn != 4)
+            return false;
+    }
+
+    TiffEncoder encoder;
+    if (!encoder.setDestination(buf))
+        return false;
+
+    return encoder.writemulti(img_vec, params);
+}
+#endif
 
 void imshow(const String& winname, InputArray mat)
 {

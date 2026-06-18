@@ -44,12 +44,19 @@ enum ImreadModes
 {
     IMREAD_UNCHANGED            = -1,
     IMREAD_GRAYSCALE            = 0,
-    IMREAD_COLOR                = 1
+    IMREAD_COLOR                = 1,
+    IMREAD_ANYDEPTH             = 2,
+    IMREAD_ANYCOLOR             = 4,
+    IMREAD_IGNORE_ORIENTATION   = 128
 };
 
 enum ImwriteFlags
 {
-    IMWRITE_JPEG_QUALITY        = 1
+    IMWRITE_JPEG_QUALITY        = 1,
+    IMWRITE_TIFF_RESUNIT        = 256,
+    IMWRITE_TIFF_XDPI           = 257,
+    IMWRITE_TIFF_YDPI           = 258,
+    IMWRITE_TIFF_COMPRESSION    = 259
 };
 
 enum VideoCaptureProperties
@@ -66,6 +73,24 @@ CV_EXPORTS_W bool imwrite(const String& filename, InputArray img, const std::vec
 CV_EXPORTS_W Mat imdecode(InputArray buf, int flags);
 
 CV_EXPORTS_W bool imencode(const String& ext, InputArray img, CV_OUT std::vector<uchar>& buf, const std::vector<int>& params = std::vector<int>());
+
+#ifdef HAVE_TIFF
+#if CV_VERSION_MAJOR >= 3
+CV_EXPORTS_W bool imreadmulti(const String& filename, CV_OUT std::vector<Mat>& mats, int flags = IMREAD_ANYCOLOR);
+CV_EXPORTS_W bool imwritemulti(const String& filename, InputArrayOfArrays img,
+                               const std::vector<int>& params = std::vector<int>());
+#endif
+
+#if CV_VERSION_MAJOR >= 4
+CV_EXPORTS_W bool imreadmulti(const String& filename, CV_OUT std::vector<Mat>& mats, int start, int count, int flags = IMREAD_ANYCOLOR);
+
+CV_EXPORTS_W bool imdecodemulti(InputArray buf, int flags, CV_OUT std::vector<Mat>& mats, const cv::Range& range = Range::all());
+
+CV_EXPORTS_W bool imencodemulti(const String& ext, InputArrayOfArrays imgs,
+                                CV_OUT std::vector<uchar>& buf,
+                                const std::vector<int>& params = std::vector<int>());
+#endif
+#endif
 
 CV_EXPORTS_W void imshow(const String& winname, InputArray mat);
 
