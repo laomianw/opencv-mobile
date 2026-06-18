@@ -75,13 +75,13 @@ CV_EXPORTS_W Mat imdecode(InputArray buf, int flags);
 CV_EXPORTS_W bool imencode(const String& ext, InputArray img, CV_OUT std::vector<uchar>& buf, const std::vector<int>& params = std::vector<int>());
 
 #ifdef HAVE_TIFF
-#if CV_VERSION_MAJOR >= 3
+#if defined(CV_VERSION_MAJOR) && CV_VERSION_MAJOR >= 3
 CV_EXPORTS_W bool imreadmulti(const String& filename, CV_OUT std::vector<Mat>& mats, int flags = IMREAD_ANYCOLOR);
 CV_EXPORTS_W bool imwritemulti(const String& filename, InputArrayOfArrays img,
                                const std::vector<int>& params = std::vector<int>());
 #endif
 
-#if CV_VERSION_MAJOR >= 4
+#if defined(CV_VERSION_MAJOR) && CV_VERSION_MAJOR >= 4
 CV_EXPORTS_W bool imreadmulti(const String& filename, CV_OUT std::vector<Mat>& mats, int start, int count, int flags = IMREAD_ANYCOLOR);
 
 CV_EXPORTS_W bool imdecodemulti(InputArray buf, int flags, CV_OUT std::vector<Mat>& mats, const cv::Range& range = Range::all());

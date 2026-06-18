@@ -1036,7 +1036,7 @@ bool imencode(const String& ext, InputArray _img, std::vector<uchar>& buf, const
 }
 
 #ifdef HAVE_TIFF
-#if CV_VERSION_MAJOR >= 4
+#if defined(CV_VERSION_MAJOR) && CV_VERSION_MAJOR >= 4
 bool imreadmulti(const String& filename, std::vector<Mat>& mats, int start, int count, int flags)
 {
     mats.clear();
@@ -1077,10 +1077,10 @@ bool imreadmulti(const String& filename, std::vector<Mat>& mats, int start, int 
 }
 #endif
 
-#if CV_VERSION_MAJOR >= 3
+#if defined(CV_VERSION_MAJOR) && CV_VERSION_MAJOR >= 3
 bool imreadmulti(const String& filename, std::vector<Mat>& mats, int flags)
 {
-#if CV_VERSION_MAJOR >= 4
+#if defined(CV_VERSION_MAJOR) && CV_VERSION_MAJOR >= 4
     return imreadmulti(filename, mats, 0, -1, flags);
 #else
     mats.clear();
@@ -1142,7 +1142,7 @@ bool imwritemulti(const String& filename, InputArrayOfArrays _imgs, const std::v
 #endif
 #endif
 
-#if CV_VERSION_MAJOR >= 4 && defined(HAVE_TIFF)
+#if defined(CV_VERSION_MAJOR) && CV_VERSION_MAJOR >= 4 && defined(HAVE_TIFF)
 bool imdecodemulti(InputArray _buf, int flags, std::vector<Mat>& mats, const cv::Range& range)
 {
     mats.clear();

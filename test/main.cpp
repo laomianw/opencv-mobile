@@ -19,7 +19,7 @@ int main()
         cv::imwrite("out2.tif", tiff_bgr);
     }
 
-#if CV_VERSION_MAJOR >= 3
+#if defined(CV_VERSION_MAJOR) && CV_VERSION_MAJOR >= 3
     {
         cv::Mat img = cv::imread("in.jpg");
         if (!img.empty())
@@ -46,7 +46,7 @@ int main()
                 printf("tiff multi-page write failed\n");
             }
 
-#if CV_VERSION_MAJOR >= 4
+#if defined(CV_VERSION_MAJOR) && CV_VERSION_MAJOR >= 4
             std::vector<unsigned char> buf;
             if (cv::imencodemulti(".tif", pages, buf))
             {
