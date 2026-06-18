@@ -40,7 +40,7 @@
 //
 //M*/
 
-#include "exif.hpp"
+#include "jpeg_exif.hpp"
 
 namespace {
 
@@ -96,7 +96,7 @@ bool JpegExifReader::parse()
  *  @return ExifEntru_t structure. Caller has to know what tag it calls in order to extract proper field from the structure JpegExifEntry_t
  *
  */
-JpegExifEntry_t JpegExifReader::getTag(const ExifTagName tag)
+JpegExifEntry_t JpegExifReader::getTag(const JpegExifTagName tag)
 {
     JpegExifEntry_t entry;
     std::map<int, JpegExifEntry_t>::iterator it = m_exif.find(tag);
@@ -242,7 +242,7 @@ void JpegExifReader::parseExif()
  *
  * @return INTEL, MOTO or NONE
  */
-Endianess_t JpegExifReader::getFormat() const
+JpegEndianess_t JpegExifReader::getFormat() const
 {
     if (m_data.size() < 1)
         return NONE;

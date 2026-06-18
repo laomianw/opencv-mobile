@@ -34,7 +34,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "exif.hpp"
+#include "jpeg_exif.hpp"
 
 namespace cv {
 
@@ -1221,7 +1221,7 @@ int jpeg_decoder_cvi_impl::init(const unsigned char* jpgdata, int jpgsize, int* 
         cv::JpegExifReader exif_reader(iss);
         if (exif_reader.parse())
         {
-            cv::JpegExifEntry_t e = exif_reader.getTag(cv::ORIENTATION);
+            cv::JpegExifEntry_t e = exif_reader.getTag(cv::JpegExifTagName::ORIENTATION);
             orientation = e.field_u16;
             if (orientation < 1 && orientation > 8)
                 orientation = 1;

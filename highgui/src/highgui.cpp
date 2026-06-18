@@ -21,7 +21,7 @@
 #include <fstream>
 #include <limits>
 #include <sstream>
-#include "exif.hpp"
+#include "jpeg_exif.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
@@ -338,7 +338,7 @@ Mat imread(const String& filename, int flags)
         JpegExifReader exif_reader(iss);
         if (exif_reader.parse())
         {
-            JpegExifEntry_t e = exif_reader.getTag(ORIENTATION);
+            JpegExifEntry_t e = exif_reader.getTag(JpegExifTagName::ORIENTATION);
             int orientation = e.field_u16;
             if (orientation >= 1 && orientation <= 8)
                 rotate_by_orientation(img, img, orientation);
@@ -785,7 +785,7 @@ Mat imdecode(InputArray _buf, int flags)
         JpegExifReader exif_reader(iss);
         if (exif_reader.parse())
         {
-            JpegExifEntry_t e = exif_reader.getTag(ORIENTATION);
+            JpegExifEntry_t e = exif_reader.getTag(JpegExifTagName::ORIENTATION);
             int orientation = e.field_u16;
             if (orientation >= 1 && orientation <= 8)
                 rotate_by_orientation(img, img, orientation);

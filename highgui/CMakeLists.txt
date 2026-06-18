@@ -18,11 +18,9 @@ set(highgui_srcs
     ${CMAKE_CURRENT_LIST_DIR}/src/nms.cpp
     )
 
-# custom JPEG EXIF helper is only needed for OpenCV 2.x; OpenCV 3.x/4.x use
-# the upstream cv::ExifReader compiled together with the TIFF codec.
-if(OPENCV_VERSION_MAJOR LESS 3)
-  list(APPEND highgui_srcs ${CMAKE_CURRENT_LIST_DIR}/src/exif.cpp)
-endif()
+# custom JPEG EXIF helper, renamed to avoid clashing with the upstream
+# cv::ExifReader used by the TIFF codec on OpenCV 3.x/4.x.
+list(APPEND highgui_srcs ${CMAKE_CURRENT_LIST_DIR}/src/jpeg_exif.cpp)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND highgui_srcs

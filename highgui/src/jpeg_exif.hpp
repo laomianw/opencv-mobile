@@ -77,7 +77,7 @@ enum AppMarkerTypes
 /**
  * @brief Base Exif tags used by IFD0 (main image)
  */
-enum ExifTagName
+enum JpegExifTagName
 {
     IMAGE_DESCRIPTION       = 0x010E,   ///< Image Description: ASCII string
     MAKE                    = 0x010F,   ///< Description of manufacturer: ASCII string
@@ -98,7 +98,7 @@ enum ExifTagName
     INVALID_TAG             = 0xFFFF    ///< Shows that the tag was not recognized
 };
 
-enum Endianess_t
+enum JpegEndianess_t
 {
     INTEL = 0x49,
     MOTO = 0x4D,
@@ -137,7 +137,7 @@ struct JpegExifEntry_t
  *      smartphone or other camera with orientation sensor support
  *      Corresponds to EXIF 2.3 Specification
  */
-enum ImageOrientation
+enum JpegImageOrientation
 {
     IMAGE_ORIENTATION_TL = 1, ///< Horizontal (normal)
     IMAGE_ORIENTATION_TR = 2, ///< Mirrored horizontal
@@ -189,13 +189,13 @@ public:
      * @param [in] tag The tag number
      * @return ExifEntru_t structure. Caller has to know what tag it calls in order to extract proper field from the structure JpegExifEntry_t
      */
-    JpegExifEntry_t getTag( const ExifTagName tag );
+    JpegExifEntry_t getTag( const JpegExifTagName tag );
 
 private:
     std::istream& m_stream;
     std::vector<unsigned char> m_data;
     std::map<int, JpegExifEntry_t > m_exif;
-    Endianess_t m_format;
+    JpegEndianess_t m_format;
 
     void parseExif();
     bool checkTagMark() const;
@@ -210,7 +210,7 @@ private:
     uint16_t getResolutionUnit( const size_t offset ) const;
     uint16_t getYCbCrPos( const size_t offset ) const;
 
-    Endianess_t getFormat() const;
+    JpegEndianess_t getFormat() const;
 
     JpegExifEntry_t parseExifEntry( const size_t offset );
 
