@@ -71,7 +71,8 @@ jobs:
         patch -p1 -i ../patches/opencv-${{ env.opencv-version }}-drawing-mono-font.patch
         rm -rf modules/highgui
         cp -r ../highgui modules/
-        rm -rf 3rdparty apps data doc samples platforms
+        for d in 3rdparty/*; do case "$(basename "$d")" in libtiff) ;; *) rm -rf "$d" ;; esac; done
+        rm -rf apps data doc samples platforms
         rm -rf modules/java
         rm -rf modules/python
         rm -rf modules/ts
@@ -147,7 +148,8 @@ jobs:
         patch -p1 -i ../patches/opencv-${{ env.opencv-version }}-drawing-mono-font.patch
         rm -rf modules/highgui
         cp -r ../highgui modules/
-        rm -rf 3rdparty apps data doc samples platforms
+        for d in 3rdparty/*; do case "$(basename "$d")" in libtiff) ;; *) rm -rf "$d" ;; esac; done
+        rm -rf apps data doc samples platforms
         rm -rf modules/java
         rm -rf modules/js
         rm -rf modules/python
@@ -222,7 +224,7 @@ jobs:
         patch -p1 -i ../patches/opencv-${{ env.opencv-version }}-drawing-mono-font.patch
         rm -rf modules/highgui
         cp -r ../highgui modules/
-        rm -rf 3rdparty
+        for d in 3rdparty/*; do case "$(basename "$d")" in libtiff) ;; *) rm -rf "$d" ;; esac; done
         rm -rf apps data doc samples platforms
         rm -rf modules/java
         rm -rf modules/js
@@ -491,6 +493,16 @@ jobs:
         # workaround ar @list issue on macos
         cmake --build . -j 4 || { cd modules/world; $DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../lib/libopencv_world.a `cat world_objects.rsp` CMakeFiles/opencv_world.dir/src/world_init.cpp.o; cd ../..; }
         cmake --build . --target install
+    - name: merge-libtiff
+      run: |
+        for d in ${{ env.SOURCE_DIR }}/build-*/install; do
+          tiff=$(find "$d" -name 'libtiff*.a' | head -1)
+          if [ -n "$tiff" ]; then
+            world="$d/lib/libopencv_world.a"
+            libtool -static "$world" "$tiff" -o "$d/lib/libopencv_world_combined.a"
+            mv "$d/lib/libopencv_world_combined.a" "$world"
+          fi
+        done
     - name: merge-opencv4-3rdparty
       if: matrix.opencv-version == '4.13.0'
       run: |
@@ -582,6 +594,16 @@ jobs:
         # workaround ar @list issue on macos
         cmake --build . -j 4 || { cd modules/world; $DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../lib/libopencv_world.a `cat world_objects.rsp` CMakeFiles/opencv_world.dir/src/world_init.cpp.o; cd ../..; }
         cmake --build . --target install
+    - name: merge-libtiff
+      run: |
+        for d in ${{ env.SOURCE_DIR }}/build-*/install; do
+          tiff=$(find "$d" -name 'libtiff*.a' | head -1)
+          if [ -n "$tiff" ]; then
+            world="$d/lib/libopencv_world.a"
+            libtool -static "$world" "$tiff" -o "$d/lib/libopencv_world_combined.a"
+            mv "$d/lib/libopencv_world_combined.a" "$world"
+          fi
+        done
     - name: merge-opencv4-3rdparty
       if: matrix.opencv-version == '4.13.0'
       run: |
@@ -765,6 +787,16 @@ jobs:
         # workaround ar @list issue on macos
         cmake --build . -j 4 || { cd modules/world; $DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../lib/libopencv_world.a `cat world_objects.rsp` CMakeFiles/opencv_world.dir/src/world_init.cpp.o; cd ../..; }
         cmake --build . --target install
+    - name: merge-libtiff
+      run: |
+        for d in ${{ env.SOURCE_DIR }}/build-*/install; do
+          tiff=$(find "$d" -name 'libtiff*.a' | head -1)
+          if [ -n "$tiff" ]; then
+            world="$d/lib/libopencv_world.a"
+            libtool -static "$world" "$tiff" -o "$d/lib/libopencv_world_combined.a"
+            mv "$d/lib/libopencv_world_combined.a" "$world"
+          fi
+        done
     - name: merge-opencv4-3rdparty
       if: matrix.opencv-version == '4.13.0'
       run: |
@@ -864,6 +896,16 @@ jobs:
         # workaround ar @list issue on macos
         cmake --build . -j 4 || { cd modules/world; $DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../lib/libopencv_world.a `cat world_objects.rsp` CMakeFiles/opencv_world.dir/src/world_init.cpp.o; cd ../..; }
         cmake --build . --target install
+    - name: merge-libtiff
+      run: |
+        for d in ${{ env.SOURCE_DIR }}/build-*/install; do
+          tiff=$(find "$d" -name 'libtiff*.a' | head -1)
+          if [ -n "$tiff" ]; then
+            world="$d/lib/libopencv_world.a"
+            libtool -static "$world" "$tiff" -o "$d/lib/libopencv_world_combined.a"
+            mv "$d/lib/libopencv_world_combined.a" "$world"
+          fi
+        done
     - name: merge-opencv4-3rdparty
       if: matrix.opencv-version == '4.13.0'
       run: |
@@ -1039,6 +1081,16 @@ jobs:
         # workaround ar @list issue on macos
         cmake --build . -j 4 || { cd modules/world; $DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../lib/libopencv_world.a `cat world_objects.rsp` CMakeFiles/opencv_world.dir/src/world_init.cpp.o; cd ../..; }
         cmake --build . --target install
+    - name: merge-libtiff
+      run: |
+        for d in ${{ env.SOURCE_DIR }}/build-*/install; do
+          tiff=$(find "$d" -name 'libtiff*.a' | head -1)
+          if [ -n "$tiff" ]; then
+            world="$d/lib/libopencv_world.a"
+            libtool -static "$world" "$tiff" -o "$d/lib/libopencv_world_combined.a"
+            mv "$d/lib/libopencv_world_combined.a" "$world"
+          fi
+        done
     - name: merge-opencv4-3rdparty
       if: matrix.opencv-version == '4.13.0'
       run: |
@@ -1131,6 +1183,16 @@ jobs:
         # workaround ar @list issue on macos
         cmake --build . -j 4 || { cd modules/world; $DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../lib/libopencv_world.a `cat world_objects.rsp` CMakeFiles/opencv_world.dir/src/world_init.cpp.o; cd ../..; }
         cmake --build . --target install
+    - name: merge-libtiff
+      run: |
+        for d in ${{ env.SOURCE_DIR }}/build-*/install; do
+          tiff=$(find "$d" -name 'libtiff*.a' | head -1)
+          if [ -n "$tiff" ]; then
+            world="$d/lib/libopencv_world.a"
+            libtool -static "$world" "$tiff" -o "$d/lib/libopencv_world_combined.a"
+            mv "$d/lib/libopencv_world_combined.a" "$world"
+          fi
+        done
     - name: merge-opencv4-3rdparty
       if: matrix.opencv-version == '4.13.0'
       run: |
@@ -1229,6 +1291,16 @@ jobs:
         # workaround ar @list issue on macos
         cmake --build . -j 4 || { cd modules/world; $DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../lib/libopencv_world.a `cat world_objects.rsp` CMakeFiles/opencv_world.dir/src/world_init.cpp.o; cd ../..; }
         cmake --build . --target install
+    - name: merge-libtiff
+      run: |
+        for d in ${{ env.SOURCE_DIR }}/build-*/install; do
+          tiff=$(find "$d" -name 'libtiff*.a' | head -1)
+          if [ -n "$tiff" ]; then
+            world="$d/lib/libopencv_world.a"
+            libtool -static "$world" "$tiff" -o "$d/lib/libopencv_world_combined.a"
+            mv "$d/lib/libopencv_world_combined.a" "$world"
+          fi
+        done
     - name: merge-opencv4-3rdparty
       if: matrix.opencv-version == '4.13.0'
       run: |
@@ -1312,6 +1384,16 @@ jobs:
         # workaround ar @list issue on macos
         cmake --build . -j 4 || { cd modules/world; $DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../lib/libopencv_world.a `cat world_objects.rsp` CMakeFiles/opencv_world.dir/src/world_init.cpp.o; cd ../..; }
         cmake --build . --target install
+    - name: merge-libtiff
+      run: |
+        for d in ${{ env.SOURCE_DIR }}/build-*/install; do
+          tiff=$(find "$d" -name 'libtiff*.a' | head -1)
+          if [ -n "$tiff" ]; then
+            world="$d/lib/libopencv_world.a"
+            libtool -static "$world" "$tiff" -o "$d/lib/libopencv_world_combined.a"
+            mv "$d/lib/libopencv_world_combined.a" "$world"
+          fi
+        done
     - name: merge-opencv4-3rdparty
       if: matrix.opencv-version == '4.13.0'
       run: |
@@ -1403,6 +1485,16 @@ jobs:
         # workaround ar @list issue on macos
         cmake --build . -j 4 || { cd modules/world; $DEVELOPER_DIR/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar qc ../../lib/libopencv_world.a `cat world_objects.rsp` CMakeFiles/opencv_world.dir/src/world_init.cpp.o; cd ../..; }
         cmake --build . --target install
+    - name: merge-libtiff
+      run: |
+        for d in ${{ env.SOURCE_DIR }}/build-*/install; do
+          tiff=$(find "$d" -name 'libtiff*.a' | head -1)
+          if [ -n "$tiff" ]; then
+            world="$d/lib/libopencv_world.a"
+            libtool -static "$world" "$tiff" -o "$d/lib/libopencv_world_combined.a"
+            mv "$d/lib/libopencv_world_combined.a" "$world"
+          fi
+        done
     - name: merge-opencv4-3rdparty
       if: matrix.opencv-version == '4.13.0'
       run: |

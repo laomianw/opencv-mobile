@@ -41,8 +41,8 @@
 //M*/
 
 
-#ifndef _OPENCV_EXIF_HPP_
-#define _OPENCV_EXIF_HPP_
+#ifndef _OPENCV_JPEGEXIF_HPP_
+#define _OPENCV_JPEGEXIF_HPP_
 
 #include <stdint.h>
 #include <cstdio>
@@ -110,9 +110,9 @@ typedef std::pair<uint32_t, uint32_t> u_rational_t;
 /**
  * @brief Entry which contains possible values for different exif tags
  */
-struct ExifEntry_t
+struct JpegExifEntry_t
 {
-    ExifEntry_t();
+    JpegExifEntry_t();
 
     std::vector<u_rational_t> field_u_rational; ///< vector of rational fields
     std::string field_str;                      ///< any kind of textual information
@@ -156,7 +156,7 @@ enum ImageOrientation
  *
  *      @code
  *      std::ifstream stream(filename,std::ios_base::in | std::ios_base::binary);
- *      ExifReader reader(stream);
+ *      JpegExifReader reader(stream);
  *      if( reader.parse() )
  *      {
  *          int orientation = reader.getTag(Orientation).field_u16;
@@ -164,16 +164,16 @@ enum ImageOrientation
  *      @endcode
  *
  */
-class ExifReader
+class JpegExifReader
 {
 public:
     /**
-     * @brief ExifReader constructor. Constructs an object of exif reader
+     * @brief JpegExifReader constructor. Constructs an object of exif reader
      *
      * @param [in]stream An istream to look for EXIF bytes from
      */
-    explicit ExifReader( std::istream& stream );
-    ~ExifReader();
+    explicit JpegExifReader( std::istream& stream );
+    ~JpegExifReader();
 
 
     /**
@@ -187,14 +187,14 @@ public:
      * @brief Get tag info by tag number
      *
      * @param [in] tag The tag number
-     * @return ExifEntru_t structure. Caller has to know what tag it calls in order to extract proper field from the structure ExifEntry_t
+     * @return ExifEntru_t structure. Caller has to know what tag it calls in order to extract proper field from the structure JpegExifEntry_t
      */
-    ExifEntry_t getTag( const ExifTagName tag );
+    JpegExifEntry_t getTag( const ExifTagName tag );
 
 private:
     std::istream& m_stream;
     std::vector<unsigned char> m_data;
-    std::map<int, ExifEntry_t > m_exif;
+    std::map<int, JpegExifEntry_t > m_exif;
     Endianess_t m_format;
 
     void parseExif();
@@ -212,11 +212,11 @@ private:
 
     Endianess_t getFormat() const;
 
-    ExifEntry_t parseExifEntry( const size_t offset );
+    JpegExifEntry_t parseExifEntry( const size_t offset );
 
     u_rational_t getURational( const size_t offset ) const;
 
-    std::map<int, ExifEntry_t > getExif();
+    std::map<int, JpegExifEntry_t > getExif();
     std::string getString( const size_t offset ) const;
     std::vector<u_rational_t> getResolution( const size_t offset ) const;
     std::vector<u_rational_t> getWhitePoint( const size_t offset ) const;
@@ -248,4 +248,4 @@ private:
 
 }
 
-#endif /* _OPENCV_EXIF_HPP_ */
+#endif /* _OPENCV_JPEGEXIF_HPP_ */

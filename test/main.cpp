@@ -10,5 +10,13 @@ int main()
 
     cv::imwrite("out.jpg", bgr);
 
+    // TIFF round-trip smoke test
+    cv::imwrite("out.tif", bgr);
+    cv::Mat tiff_bgr = cv::imread("out.tif", 1);
+    if (!tiff_bgr.empty())
+    {
+        cv::imwrite("out2.tif", tiff_bgr);
+    }
+
     return 0;
 }

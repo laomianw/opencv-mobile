@@ -986,10 +986,10 @@ int jpeg_decoder_aw_impl::init(const unsigned char* jpgdata, int jpgsize, int* _
         std::string s((const char*)jpgdata, jpgsize);
         std::istringstream iss(s);
 
-        cv::ExifReader exif_reader(iss);
+        cv::JpegExifReader exif_reader(iss);
         if (exif_reader.parse())
         {
-            cv::ExifEntry_t e = exif_reader.getTag(cv::ORIENTATION);
+            cv::JpegExifEntry_t e = exif_reader.getTag(cv::ORIENTATION);
             orientation = e.field_u16;
             if (orientation < 1 && orientation > 8)
                 orientation = 1;

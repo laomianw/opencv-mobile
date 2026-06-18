@@ -52,23 +52,23 @@ namespace {
 namespace cv
 {
 
-ExifEntry_t::ExifEntry_t() :
+JpegExifEntry_t::JpegExifEntry_t() :
     field_float(0), field_double(0), field_u32(0), field_s32(0),
     tag(INVALID_TAG), field_u16(0), field_s16(0), field_u8(0), field_s8(0)
 {
 }
 
 /**
- * @brief ExifReader constructor
+ * @brief JpegExifReader constructor
  */
-ExifReader::ExifReader(std::istream& stream) : m_stream(stream), m_format(NONE)
+JpegExifReader::JpegExifReader(std::istream& stream) : m_stream(stream), m_format(NONE)
 {
 }
 
 /**
- * @brief ExifReader destructor
+ * @brief JpegExifReader destructor
  */
-ExifReader::~ExifReader()
+JpegExifReader::~JpegExifReader()
 {
 }
 
@@ -77,7 +77,7 @@ ExifReader::~ExifReader()
  * @return  true if parsing was successful and exif information exists in JpegReader object
  *          false in case of unsuccessful parsing
  */
-bool ExifReader::parse()
+bool JpegExifReader::parse()
 {
     m_exif = getExif();
     if( !m_exif.empty() )
@@ -93,13 +93,13 @@ bool ExifReader::parse()
  *
  *  @param [in] tag The tag number
  *
- *  @return ExifEntru_t structure. Caller has to know what tag it calls in order to extract proper field from the structure ExifEntry_t
+ *  @return ExifEntru_t structure. Caller has to know what tag it calls in order to extract proper field from the structure JpegExifEntry_t
  *
  */
-ExifEntry_t ExifReader::getTag(const ExifTagName tag)
+JpegExifEntry_t JpegExifReader::getTag(const ExifTagName tag)
 {
-    ExifEntry_t entry;
-    std::map<int, ExifEntry_t>::iterator it = m_exif.find(tag);
+    JpegExifEntry_t entry;
+    std::map<int, JpegExifEntry_t>::iterator it = m_exif.find(tag);
 
     if( it != m_exif.end() )
     {
@@ -113,9 +113,9 @@ ExifEntry_t ExifReader::getTag(const ExifTagName tag)
  * @brief Get exif directory structure contained in file (if any)
  *          This is internal function and is not exposed to client
  *
- *  @return Map where key is tag number and value is ExifEntry_t structure
+ *  @return Map where key is tag number and value is JpegExifEntry_t structure
  */
-std::map<int, ExifEntry_t > ExifReader::getExif()
+std::map<int, JpegExifEntry_t > JpegExifReader::getExif()
 {
     const std::streamsize markerSize = 2;
     const std::streamsize offsetToTiffHeader = 6; //bytes from Exif size field to the first TIFF header
@@ -146,11 +146,11 @@ std::map<int, ExifEntry_t > ExifReader::getExif()
             case COM:
                 bytesToSkip = getFieldSize();
                 if (bytesToSkip < markerSize) {
-                    return std::map<int, ExifEntry_t >();
+                    return std::map<int, JpegExifEntry_t >();
                 }
                 m_stream.seekg( static_cast<long>( bytesToSkip - markerSize ), m_stream.cur );
                 if ( m_stream.fail() ) {
-                    return std::map<int, ExifEntry_t >();
+                    return std::map<int, JpegExifEntry_t >();
                 }
                 break;
 
@@ -161,12 +161,12 @@ std::map<int, ExifEntry_t > ExifReader::getExif()
             case APP1: //actual Exif Marker
                 exifSize = getFieldSize();
                 if (exifSize <= offsetToTiffHeader) {
-                    return std::map<int, ExifEntry_t >();
+                    return std::map<int, JpegExifEntry_t >();
                 }
                 m_data.resize( exifSize - offsetToTiffHeader );
                 m_stream.seekg( static_cast<long>( offsetToTiffHeader ), m_stream.cur );
                 if ( m_stream.fail() ) {
-                    return std::map<int, ExifEntry_t >();
+                    return std::map<int, JpegExifEntry_t >();
                 }
                 m_stream.read( reinterpret_cast<char*>(&m_data[0]), exifSize - offsetToTiffHeader );
                 exifFound = true;
@@ -194,7 +194,7 @@ std::map<int, ExifEntry_t > ExifReader::getExif()
  *
  *  @return size of exif field in the file
  */
-size_t ExifReader::getFieldSize ()
+size_t JpegExifReader::getFieldSize ()
 {
     unsigned char fieldSize[2];
     m_stream.read( reinterpret_cast<char*>(fieldSize), 2 );
@@ -213,7 +213,7 @@ size_t ExifReader::getFieldSize ()
  *  @return The function doesn't return any value. In case of unsuccessful parsing
  *      the m_exif member is not filled up
  */
-void ExifReader::parseExif()
+void JpegExifReader::parseExif()
 {
     m_format = getFormat();
 
@@ -230,7 +230,7 @@ void ExifReader::parseExif()
 
     for( size_t entry = 0; entry < numEntry; entry++ )
     {
-        ExifEntry_t exifEntry = parseExifEntry( offset );
+        JpegExifEntry_t exifEntry = parseExifEntry( offset );
         m_exif.insert( std::make_pair( exifEntry.tag, exifEntry ) );
         offset += tiffFieldSize;
     }
@@ -242,7 +242,7 @@ void ExifReader::parseExif()
  *
  * @return INTEL, MOTO or NONE
  */
-Endianess_t ExifReader::getFormat() const
+Endianess_t JpegExifReader::getFormat() const
 {
     if (m_data.size() < 1)
         return NONE;
@@ -271,7 +271,7 @@ Endianess_t ExifReader::getFormat() const
  *
  * @return true if tag mark equals 0x002A, false otherwise
  */
-bool ExifReader::checkTagMark() const
+bool JpegExifReader::checkTagMark() const
 {
     uint16_t tagMark = getU16( 2 );
 
@@ -288,7 +288,7 @@ bool ExifReader::checkTagMark() const
  *
  * @return offset of IFD0 field
  */
-uint32_t ExifReader::getStartOffset() const
+uint32_t JpegExifReader::getStartOffset() const
 {
     return getU32( 4 );
 }
@@ -298,7 +298,7 @@ uint32_t ExifReader::getStartOffset() const
  *
  * @return The number of directory entries
  */
-size_t ExifReader::getNumDirEntry(const size_t offsetNumDir) const
+size_t JpegExifReader::getNumDirEntry(const size_t offsetNumDir) const
 {
     return getU16( offsetNumDir );
 }
@@ -319,12 +319,12 @@ size_t ExifReader::getNumDirEntry(const size_t offsetNumDir) const
  *      Details can be found here: http://www.media.mit.edu/pia/Research/deepview/exif.html
  *
  * @param [in] offset Offset to entry in bytes inside raw exif data
- * @return ExifEntry_t structure which corresponds to particular entry
+ * @return JpegExifEntry_t structure which corresponds to particular entry
  *
  */
-ExifEntry_t ExifReader::parseExifEntry(const size_t offset)
+JpegExifEntry_t JpegExifReader::parseExifEntry(const size_t offset)
 {
-    ExifEntry_t entry;
+    JpegExifEntry_t entry;
     uint16_t tagNum = getExifTag( offset );
     entry.tag = tagNum;
 
@@ -390,7 +390,7 @@ ExifEntry_t ExifReader::parseExifEntry(const size_t offset)
  * @param [in] offset Offset to entry in bytes inside raw exif data
  * @return tag number
  */
-uint16_t ExifReader::getExifTag(const size_t offset) const
+uint16_t JpegExifReader::getExifTag(const size_t offset) const
 {
     return getU16( offset );
 }
@@ -401,7 +401,7 @@ uint16_t ExifReader::getExifTag(const size_t offset) const
  * @param [in] offset Offset to entry in bytes inside raw exif data
  * @return string value
  */
-std::string ExifReader::getString(const size_t offset) const
+std::string JpegExifReader::getString(const size_t offset) const
 {
     size_t size = getU32( offset + 4 );
     size_t dataOffset = 8; // position of data in the field
@@ -424,7 +424,7 @@ std::string ExifReader::getString(const size_t offset) const
  * @param [in] offset Offset to entry in bytes inside raw exif data
  * @return Unsigned short data
  */
-uint16_t ExifReader::getU16(const size_t offset) const
+uint16_t JpegExifReader::getU16(const size_t offset) const
 {
     if (offset + 1 >= m_data.size())
         return 0;
@@ -442,7 +442,7 @@ uint16_t ExifReader::getU16(const size_t offset) const
  * @param [in] offset Offset to entry in bytes inside raw exif data
  * @return Unsigned 32-bit data
  */
-uint32_t ExifReader::getU32(const size_t offset) const
+uint32_t JpegExifReader::getU32(const size_t offset) const
 {
     if (offset + 3 >= m_data.size())
         return 0;
@@ -470,7 +470,7 @@ uint32_t ExifReader::getU32(const size_t offset) const
  * "rational" means a fractional value, it contains 2 signed/unsigned long integer value,
  *  and the first represents the numerator, the second, the denominator.
  */
-u_rational_t ExifReader::getURational(const size_t offset) const
+u_rational_t JpegExifReader::getURational(const size_t offset) const
 {
     uint32_t numerator = getU32( offset );
     uint32_t denominator = getU32( offset + 4 );
@@ -485,7 +485,7 @@ u_rational_t ExifReader::getURational(const size_t offset) const
  * @param [in] offset Offset to entry in bytes inside raw exif data
  * @return orientation number
  */
-uint16_t ExifReader::getOrientation(const size_t offset) const
+uint16_t JpegExifReader::getOrientation(const size_t offset) const
 {
     return getU16( offset + 8 );
 }
@@ -496,7 +496,7 @@ uint16_t ExifReader::getOrientation(const size_t offset) const
  * @param [in] offset Offset to entry in bytes inside raw exif data
  * @return resolution value
  */
-std::vector<u_rational_t> ExifReader::getResolution(const size_t offset) const
+std::vector<u_rational_t> JpegExifReader::getResolution(const size_t offset) const
 {
     std::vector<u_rational_t> result;
     uint32_t rationalOffset = getU32( offset + 8 );
@@ -511,7 +511,7 @@ std::vector<u_rational_t> ExifReader::getResolution(const size_t offset) const
  * @param [in] offset Offset to entry in bytes inside raw exif data
  * @return resolution unit value
  */
-uint16_t ExifReader::getResolutionUnit(const size_t offset) const
+uint16_t JpegExifReader::getResolutionUnit(const size_t offset) const
 {
     return getU16( offset + 8 );
 }
@@ -525,7 +525,7 @@ uint16_t ExifReader::getResolutionUnit(const size_t offset) const
  * If the image uses CIE Standard Illumination D65(known as international
  * standard of 'daylight'), the values are '3127/10000,3290/10000'.
  */
-std::vector<u_rational_t> ExifReader::getWhitePoint(const size_t offset) const
+std::vector<u_rational_t> JpegExifReader::getWhitePoint(const size_t offset) const
 {
     std::vector<u_rational_t> result;
     uint32_t rationalOffset = getU32( offset + 8 );
@@ -542,7 +542,7 @@ std::vector<u_rational_t> ExifReader::getWhitePoint(const size_t offset) const
  * @return vector with primary chromaticies values
  *
  */
-std::vector<u_rational_t> ExifReader::getPrimaryChromaticies(const size_t offset) const
+std::vector<u_rational_t> JpegExifReader::getPrimaryChromaticies(const size_t offset) const
 {
     std::vector<u_rational_t> result;
     uint32_t rationalOffset = getU32( offset + 8 );
@@ -561,7 +561,7 @@ std::vector<u_rational_t> ExifReader::getPrimaryChromaticies(const size_t offset
  * @return vector with YCbCr coefficients values
  *
  */
-std::vector<u_rational_t> ExifReader::getYCbCrCoeffs(const size_t offset) const
+std::vector<u_rational_t> JpegExifReader::getYCbCrCoeffs(const size_t offset) const
 {
     std::vector<u_rational_t> result;
     uint32_t rationalOffset = getU32( offset + 8 );
@@ -580,7 +580,7 @@ std::vector<u_rational_t> ExifReader::getYCbCrCoeffs(const size_t offset) const
  * @return vector with YCbCr positioning value
  *
  */
-uint16_t ExifReader::getYCbCrPos(const size_t offset) const
+uint16_t JpegExifReader::getYCbCrPos(const size_t offset) const
 {
     return getU16( offset + 8 );
 }
@@ -596,7 +596,7 @@ uint16_t ExifReader::getYCbCrPos(const size_t offset) const
  * next 2 are G, last 2 are B.
  *
  */
-std::vector<u_rational_t> ExifReader::getRefBW(const size_t offset) const
+std::vector<u_rational_t> JpegExifReader::getRefBW(const size_t offset) const
 {
     const size_t rationalFieldSize = 8;
     std::vector<u_rational_t> result;

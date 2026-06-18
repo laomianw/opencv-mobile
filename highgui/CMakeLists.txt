@@ -6,9 +6,9 @@ option(WITH_AW "build with aw" OFF)
 option(WITH_RK "build with rk" OFF)
 option(WITH_RPI "build with rpi" OFF)
 option(WITH_CIX "build with cix" OFF)
+option(WITH_OPENCV_MOBILE_TIFF "build with tiff" OFF)
 
 set(highgui_srcs
-    ${CMAKE_CURRENT_LIST_DIR}/src/exif.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/highgui.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/kanna_rotate.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/videocapture.cpp
@@ -17,6 +17,12 @@ set(highgui_srcs
     # dnn
     ${CMAKE_CURRENT_LIST_DIR}/src/nms.cpp
     )
+
+# custom JPEG EXIF helper is only needed for OpenCV 2.x; OpenCV 3.x/4.x use
+# the upstream cv::ExifReader compiled together with the TIFF codec.
+if(OPENCV_VERSION_MAJOR LESS 3)
+  list(APPEND highgui_srcs ${CMAKE_CURRENT_LIST_DIR}/src/exif.cpp)
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   list(APPEND highgui_srcs
@@ -69,6 +75,41 @@ if(WITH_CIX)
   message(STATUS "highgui cix enabled")
 endif()
 
+if(WITH_OPENCV_MOBILE_TIFF)
+  add_definitions(-DHAVE_TIFF=1)
+  message(STATUS "highgui tiff enabled")
+
+  if(OPENCV_VERSION_MAJOR GREATER_EQUAL 3)
+    list(APPEND highgui_srcs
+      ${OpenCV_SOURCE_DIR}/modules/imgcodecs/src/grfmt_tiff.cpp
+      ${OpenCV_SOURCE_DIR}/modules/imgcodecs/src/grfmt_base.cpp
+      ${OpenCV_SOURCE_DIR}/modules/imgcodecs/src/utils.cpp
+      ${OpenCV_SOURCE_DIR}/modules/imgcodecs/src/bitstrm.cpp
+      ${OpenCV_SOURCE_DIR}/modules/imgcodecs/src/exif.cpp)
+    ocv_include_directories(
+      ${OpenCV_SOURCE_DIR}/modules/imgcodecs/src
+      ${OpenCV_SOURCE_DIR}/modules/imgcodecs/include)
+  else()
+    list(APPEND highgui_srcs
+      ${OpenCV_SOURCE_DIR}/modules/highgui/src/grfmt_tiff.cpp
+      ${OpenCV_SOURCE_DIR}/modules/highgui/src/grfmt_base.cpp
+      ${OpenCV_SOURCE_DIR}/modules/highgui/src/utils.cpp
+      ${OpenCV_SOURCE_DIR}/modules/highgui/src/bitstrm.cpp)
+    # Use plain include_directories(AFTER) for the original OpenCV 2.x highgui
+    # headers so that the custom opencv2/highgui.hpp wrapper stays first.
+    include_directories(AFTER
+      ${OpenCV_SOURCE_DIR}/modules/highgui/src
+      ${OpenCV_SOURCE_DIR}/modules/highgui/include)
+  endif()
+
+  set(TIFF_LIBRARY libtiff)
+  add_subdirectory(${OpenCV_SOURCE_DIR}/3rdparty/libtiff
+                   ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/libtiff)
+  ocv_include_directories(
+    ${OpenCV_SOURCE_DIR}/3rdparty/libtiff
+    ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/libtiff)
+endif()
+
 file(GLOB highgui_ext_hdrs
      "${CMAKE_CURRENT_LIST_DIR}/include/opencv2/*.hpp"
      "${CMAKE_CURRENT_LIST_DIR}/include/opencv2/${name}/*.hpp"
@@ -92,7 +133,12 @@ source_group("Include" FILES ${highgui_ext_hdrs})
 ocv_set_module_sources(HEADERS ${highgui_ext_hdrs} SOURCES ${highgui_srcs})
 ocv_module_include_directories()
 
-ocv_create_module(${HIGHGUI_LIBRARIES})
+set(highgui_link_libs ${HIGHGUI_LIBRARIES})
+if(WITH_OPENCV_MOBILE_TIFF)
+  list(APPEND highgui_link_libs ${TIFF_LIBRARY})
+endif()
+
+ocv_create_module(${highgui_link_libs})
 
 if(OPENCV_VERSION_MAJOR EQUAL 2)
   if(BUILD_SHARED_LIBS)

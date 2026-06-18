@@ -66,6 +66,10 @@
 #include <thread>
 #endif
 
+#ifdef HAVE_TIFF
+#include "grfmt_tiff.hpp"
+#endif
+
 namespace cv {
 //
 //     1        2       3      4         5            6           7          8
@@ -119,6 +123,17 @@ static void rotate_by_orientation(const Mat& src, Mat& dst, int orientation)
     }
 }
 
+#ifdef HAVE_TIFF
+static bool is_tiff(const unsigned char* buf, size_t size)
+{
+    return size >= 4 &&
+           ((buf[0] == 'I' && buf[1] == 'I' && buf[2] == 0x2a && buf[3] == 0x00) ||
+            (buf[0] == 'M' && buf[1] == 'M' && buf[2] == 0x00 && buf[3] == 0x2a) ||
+            (buf[0] == 'I' && buf[1] == 'I' && buf[2] == 0x2b && buf[3] == 0x00) ||
+            (buf[0] == 'M' && buf[1] == 'M' && buf[2] == 0x00 && buf[3] == 0x2b));
+}
+#endif
+
 Mat imread(const String& filename, int flags)
 {
     int desired_channels = 0;
@@ -171,6 +186,20 @@ Mat imread(const String& filename, int flags)
 
     const unsigned char* buf_data = (const unsigned char*)filedata.data();
     size_t buf_size = filedata.size();
+
+#ifdef HAVE_TIFF
+    if (is_tiff(buf_data, buf_size))
+    {
+        TiffDecoder decoder;
+        if (decoder.setSource(filename) && decoder.readHeader())
+        {
+            Mat img(decoder.height(), decoder.width(), decoder.type());
+            if (decoder.readData(img))
+                return img;
+        }
+        return Mat();
+    }
+#endif
 
     if (buf_size > 4 && buf_data[0] == 0xFF && buf_data[1] == 0xD8)
     {
@@ -286,10 +315,10 @@ Mat imread(const String& filename, int flags)
         std::string s((const char*)buf_data, buf_size);
         std::istringstream iss(s);
 
-        ExifReader exif_reader(iss);
+        JpegExifReader exif_reader(iss);
         if (exif_reader.parse())
         {
-            ExifEntry_t e = exif_reader.getTag(ORIENTATION);
+            JpegExifEntry_t e = exif_reader.getTag(ORIENTATION);
             int orientation = e.field_u16;
             if (orientation >= 1 && orientation <= 8)
                 rotate_by_orientation(img, img, orientation);
@@ -513,6 +542,16 @@ bool imwrite(const String& filename, InputArray _img, const std::vector<int>& pa
 #endif
     }
 
+#ifdef HAVE_TIFF
+    if (ext == ".tiff" || ext == ".tif" || ext == ".TIFF" || ext == ".TIF")
+    {
+        TiffEncoder encoder;
+        if (encoder.setDestination(filename) && encoder.write(img, params))
+            return true;
+        return false;
+    }
+#endif
+
     // bgr to rgb
     if (c == 3)
     {
@@ -594,6 +633,20 @@ Mat imdecode(InputArray _buf, int flags)
 
     const unsigned char* buf_data = (const unsigned char*)buf.data;
     size_t buf_size = buf.cols * buf.rows * buf.elemSize();
+
+#ifdef HAVE_TIFF
+    if (is_tiff(buf_data, buf_size))
+    {
+        TiffDecoder decoder;
+        if (decoder.setSource(buf) && decoder.readHeader())
+        {
+            Mat img(decoder.height(), decoder.width(), decoder.type());
+            if (decoder.readData(img))
+                return img;
+        }
+        return Mat();
+    }
+#endif
 
     if (buf_size > 4 && buf_data[0] == 0xFF && buf_data[1] == 0xD8)
     {
@@ -709,10 +762,10 @@ Mat imdecode(InputArray _buf, int flags)
         std::string s((const char*)buf_data, buf_size);
         std::istringstream iss(s);
 
-        ExifReader exif_reader(iss);
+        JpegExifReader exif_reader(iss);
         if (exif_reader.parse())
         {
-            ExifEntry_t e = exif_reader.getTag(ORIENTATION);
+            JpegExifEntry_t e = exif_reader.getTag(ORIENTATION);
             int orientation = e.field_u16;
             if (orientation >= 1 && orientation <= 8)
                 rotate_by_orientation(img, img, orientation);
@@ -899,6 +952,16 @@ bool imencode(const String& ext, InputArray _img, std::vector<uchar>& buf, const
         }
 #endif
     }
+
+#ifdef HAVE_TIFF
+    if (ext == ".tiff" || ext == ".tif" || ext == ".TIFF" || ext == ".TIF")
+    {
+        TiffEncoder encoder;
+        if (encoder.setDestination(buf) && encoder.write(img, params))
+            return true;
+        return false;
+    }
+#endif
 
     // bgr to rgb
     if (c == 3)
