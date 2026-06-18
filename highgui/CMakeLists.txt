@@ -76,10 +76,14 @@ if(WITH_CIX)
 endif()
 
 if(WITH_OPENCV_MOBILE_TIFF)
-  add_definitions(-DHAVE_TIFF=1)
-  message(STATUS "highgui tiff enabled")
-
+  # The upstream OpenCV 2.x source package used by opencv-mobile has the
+  # entire modules/highgui directory replaced by the custom highgui module,
+  # so the original grfmt_tiff sources are no longer available. TIFF support
+  # is therefore only enabled for OpenCV 3.x and 4.x.
   if(OPENCV_VERSION_MAJOR GREATER_EQUAL 3)
+    add_definitions(-DHAVE_TIFF=1)
+    message(STATUS "highgui tiff enabled")
+
     list(APPEND highgui_srcs
       ${OpenCV_SOURCE_DIR}/modules/imgcodecs/src/grfmt_tiff.cpp
       ${OpenCV_SOURCE_DIR}/modules/imgcodecs/src/grfmt_base.cpp
@@ -89,25 +93,16 @@ if(WITH_OPENCV_MOBILE_TIFF)
     ocv_include_directories(
       ${OpenCV_SOURCE_DIR}/modules/imgcodecs/src
       ${OpenCV_SOURCE_DIR}/modules/imgcodecs/include)
-  else()
-    list(APPEND highgui_srcs
-      ${OpenCV_SOURCE_DIR}/modules/highgui/src/grfmt_tiff.cpp
-      ${OpenCV_SOURCE_DIR}/modules/highgui/src/grfmt_base.cpp
-      ${OpenCV_SOURCE_DIR}/modules/highgui/src/utils.cpp
-      ${OpenCV_SOURCE_DIR}/modules/highgui/src/bitstrm.cpp)
-    # Use plain include_directories(AFTER) for the original OpenCV 2.x highgui
-    # headers so that the custom opencv2/highgui.hpp wrapper stays first.
-    include_directories(AFTER
-      ${OpenCV_SOURCE_DIR}/modules/highgui/src
-      ${OpenCV_SOURCE_DIR}/modules/highgui/include)
-  endif()
 
-  set(TIFF_LIBRARY libtiff)
-  add_subdirectory(${OpenCV_SOURCE_DIR}/3rdparty/libtiff
-                   ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/libtiff)
-  ocv_include_directories(
-    ${OpenCV_SOURCE_DIR}/3rdparty/libtiff
-    ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/libtiff)
+    set(TIFF_LIBRARY libtiff)
+    add_subdirectory(${OpenCV_SOURCE_DIR}/3rdparty/libtiff
+                     ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/libtiff)
+    ocv_include_directories(
+      ${OpenCV_SOURCE_DIR}/3rdparty/libtiff
+      ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/libtiff)
+  else()
+    message(STATUS "highgui tiff disabled for OpenCV 2.x")
+  endif()
 endif()
 
 file(GLOB highgui_ext_hdrs
